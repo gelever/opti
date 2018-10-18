@@ -17,23 +17,23 @@ using Operator = linalgcpp::Operator;
 class Rosenbrock
 {
     public:
-        Rosenbrock(double A_in, int num_dim_in = 2) : A(A_in), num_dim(num_dim_in)
+        Rosenbrock(double A_in, int num_dim_in = 2) : A(A_in), num_dim(num_dim_in), num_evals(0)
         { assert(num_dim >= 2); assert(A >= 1.0);}
 
         double Eval(const VectorView& x) const;
-        void Gradient(const VectorView& x, VectorView df_x) const;
-        void Hessian(const VectorView& x, const VectorView& p, VectorView d2f_x) const;
         double LineBackTrack(const VectorView& x, double f, const VectorView& grad, const VectorView& p,
                 double alpha_0, double c, double rho, int max_iter) const;
 
         double A;
         int num_dim;
+
+        mutable int num_evals;
 };
 
-class RosenbrockHessian : public Operator
+class Hessian : public Operator
 {
     public:
-        RosenbrockHessian(const Rosenbrock& rb_in, const VectorView& x_in)
+        Hessian(const Rosenbrock& rb_in, const VectorView& x_in)
             : Operator(rb_in.num_dim), rb(rb_in), x(x_in)
         {}
 
@@ -57,10 +57,42 @@ class RosenbrockHessian : public Operator
         const VectorView& x;
 };
 
-class RosenbrockHessian_prec : public Operator
+class Gradient : public Operator
 {
     public:
-        RosenbrockHessian_prec(const Rosenbrock& rb_in, const VectorView& x_in)
+        Gradient(const Rosenbrock& rb_in, const VectorView& x_in)
+            : Operator(rb_in.num_dim), rb(rb_in), x(x_in)
+        {}
+
+        using Operator::Mult;
+        void Mult(const VectorView& x, VectorView df_x) const override
+        {
+            double A = rb.A;
+            int num_dim = rb.num_dim;
+
+            assert(x.size() == num_dim);
+            assert(df_x.size() == num_dim);
+
+            df_x[0] = (-4.0 * A * x[0] * (x[1] - std::pow(x[0], 2))) - (2.0 * (1.0 - x[0]));
+
+            for (int i = 1; i < num_dim - 1; ++i)
+            {
+                df_x[i] = (2.0 * A * (x[i] - std::pow(x[i - 1], 2))) \
+                          - (4 * A * x[i] * (x[i + 1] - std::pow(x[i], 2))) \
+                          - (2 * (1 - x[i]));
+            }
+
+            df_x[num_dim - 1] = 2.0 * A * (x[num_dim - 1] - std::pow(x[num_dim - 2], 2));
+        }
+
+        const Rosenbrock& rb;
+        const VectorView& x;
+};
+
+class HessianDiagInv : public Operator
+{
+    public:
+        HessianDiagInv(const Rosenbrock& rb_in, const VectorView& x_in)
             : Operator(rb_in.num_dim), rb(rb_in), x(x_in)
         {}
 
@@ -84,7 +116,6 @@ class RosenbrockHessian_prec : public Operator
         const VectorView& x;
 };
 
-
 double Rosenbrock::Eval(const VectorView& x) const
 {
     double sum = 0.0;
@@ -97,34 +128,9 @@ double Rosenbrock::Eval(const VectorView& x) const
         sum += (A * std::pow(p1, 2)) + std::pow(p2, 2);
     }
 
+    num_evals++;
+
     return sum;
-}
-
-void Rosenbrock::Gradient(const VectorView& x, VectorView df_x) const
-{
-    assert(x.size() == num_dim);
-    assert(df_x.size() == num_dim);
-
-    df_x[0] = (-4.0 * A * x[0] * (x[1] - std::pow(x[0], 2))) - (2.0 * (1.0 - x[0]));
-    
-    for (int i = 1; i < num_dim - 1; ++i)
-    {
-        df_x[i] = (2.0 * A * (x[i] - std::pow(x[i - 1], 2))) \
-                  - (4 * A * x[i] * (x[i + 1] - std::pow(x[i], 2))) \
-                  - (2 * (1 - x[i]));
-    }
-
-    df_x[num_dim - 1] = 2.0 * A * (x[num_dim - 1] - std::pow(x[num_dim - 2], 2));
-}
-
-void Rosenbrock::Hessian(const VectorView& x, const VectorView& p, VectorView d2f_x) const
-{
-    assert(x.size() == num_dim);
-    assert(d2f_x.size() == num_dim);
-
-    RosenbrockHessian hess_op(*this, x);
-
-    hess_op.Mult(p, d2f_x);
 }
 
 double Rosenbrock::LineBackTrack(const VectorView& x, double f, const VectorView& grad, const VectorView& p,
@@ -213,7 +219,7 @@ int main(int argc, char ** argv)
     double alpha_0_linesearch = 1.0;
     double c_linesearch = 0.01;
     double rho_linesearch = 0.50;
-    int max_iter_linesearch = 100000;
+    int max_iter_linesearch = 20;
 
     linalgcpp::ArgParser arg_parser(argc, argv);
 
@@ -246,6 +252,8 @@ int main(int argc, char ** argv)
     double hi = 1.0 + variance;
     linalgcpp::Randomize(x, lo, hi);
 
+    // Alternate -1.2, 1.0, -1.2
+
     //x[0] = -1.2;
     //x[1] = 1.0;
 
@@ -256,8 +264,8 @@ int main(int argc, char ** argv)
 
     // CG Solver initialize
     Rosenbrock rb(rb_A, dim);
-    RosenbrockHessian rb_h(rb, x);
-    linalgcpp::PCGSolver cg(rb_h);
+    Hessian rb_hess(rb, x);
+    linalgcpp::PCGSolver cg(rb_hess);
 
     // Workspace
     Vector grad(dim);
@@ -273,13 +281,20 @@ int main(int argc, char ** argv)
         double f = rb.Eval(x);
 
         // Compute gradient at x
-        rb.Gradient(x, grad);
+        Gradient rb_grad(rb, x);
+        rb_grad.Mult(x, grad);
 
         // Solve p = H \ grad
-        RosenbrockHessian rb_h(rb, x);
-        cg.SetOperator(rb_h);
+        Hessian rb_hess(rb, x);
+        cg.SetOperator(rb_hess);
         p = 0.0;
         cg.Mult(grad, p);
+
+        //HessianDiagInv rb_hess(rb, x);
+        //rb_hess.Mult(grad, p);
+
+        //p = grad;
+
         p *= -1.0;
 
         // Find alpha using line backtracking
@@ -303,7 +318,7 @@ int main(int argc, char ** argv)
             f_history.push_back(f);
         }
 
-        printf("%d: f: %.2e p: %.2e e: %.2e alpha: %.2f grad*p: %.2e cg: %d\n",
+        printf("%d: f: %.2e p: %.2e e: %.2e alpha: %.2e grad*p: %.2e cg: %d\n",
                 i, f, p_norm, e_norm, alpha, grad * p, cg.GetNumIterations());
 
         if (p_norm < tol)
@@ -311,6 +326,8 @@ int main(int argc, char ** argv)
             break;
         }
     }
+
+    printf("Total Function Evals: %d\n", rb.num_evals);
 
     if (save_history)
     {

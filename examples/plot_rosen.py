@@ -14,23 +14,24 @@ import itertools
 
 def plot_figs(x_hist, p_hist, f_hist, A, method):
     fig = plt.figure()
-    ax = fig.add_subplot(121)
+    if (len(x_hist) > 0):
+        ax = fig.add_subplot(121)
 
-    lin_space = np.linspace(-2.0, 2.0, 1000)
-    x, y = np.meshgrid(lin_space, lin_space)
+        lin_space = np.linspace(-2.0, 2.0, 1000)
+        x, y = np.meshgrid(lin_space, lin_space)
 
-    z = (A * (y - (x*x))**2 + (1 - x)**2)
+        z = (A * (y - (x*x))**2 + (1 - x)**2)
 
-    #levels = np.logspace(0, 3, num=10, base=2.0)
-    levels = np.linspace(0, 8, num=10)
+        #levels = np.logspace(0, 3, num=10, base=2.0)
+        levels = np.linspace(0, 8, num=10)
 
-    ax.contour(x, y, z, cmap=plt.get_cmap("jet_r"), zorder=0, levels=levels)
+        ax.contour(x, y, z, cmap=plt.get_cmap("jet_r"), zorder=0, levels=levels)
 
-    c = np.linspace(0, 1.0, len(x_hist))
+        c = np.linspace(0, 1.0, len(x_hist))
 
-    scatter = ax.scatter(x=x_hist[:, 0], y=x_hist[:, 1], c=c, cmap=plt.get_cmap(
-        "YlGn_r"), zorder=1, label=method)
-    ax.legend()
+        scatter = ax.scatter(x=x_hist[:, 0], y=x_hist[:, 1], c=c, cmap=plt.get_cmap(
+            "YlGn_r"), zorder=1, label=method)
+        ax.legend()
 
     ax = fig.add_subplot(222)
     #plot_type = ax.semilogy if len(x_hist) > 30 else ax.plot
@@ -71,7 +72,7 @@ if __name__ == "__main__":
     methods = ["Newton"]
 
     for A, m in itertools.product(As, methods):
-        x_hist = np.loadtxt("x." + str(A) + ".000000." + m + ".txt")
+        #x_hist = np.loadtxt("x." + str(A) + ".000000." + m + ".txt")
         p_hist = np.loadtxt("p." + str(A) + ".000000." + m + ".txt")
         f_hist = np.loadtxt("f." + str(A) + ".000000." + m + ".txt")
 
@@ -81,5 +82,5 @@ if __name__ == "__main__":
         #grads(x_hist)
         #hess(x_hist)
         #hess_grad(x_hist)
-        plot_figs(x_hist, p_hist, f_hist, A, m)
-        #plot_figs([], p_hist, f_hist, A, m)
+        #plot_figs(x_hist, p_hist, f_hist, A, m)
+        plot_figs([], p_hist, f_hist, A, m)
