@@ -14,12 +14,16 @@ using Vector = linalgcpp::Vector<double>;
 using VectorView = linalgcpp::VectorView<double>;
 using Operator = linalgcpp::Operator;
 
+int counter = 0;
+
 double f_rosen(double A, const VectorView& x)
 {
     assert(x.size() == 2);
 
     double term1 = x[1] - (x[0]*x[0]);
     double term2 = 1 - x[0];
+
+    counter++;
 
     return (A * term1 * term1) + (term2 * term2);
 }
@@ -145,7 +149,7 @@ int main()
     double alpha_0 = 1.0;
     double c = 0.01;
     double rho = 0.5;
-    int alpha_max_iter = 2000;
+    int alpha_max_iter = 20;
 
     // Iteration Params
     double tol = 1e-3;
@@ -163,7 +167,8 @@ int main()
         std::vector<double> p_history;
         std::vector<double> f_history;
 
-        for (int i = 1; i < max_iter; ++i)
+        int i = 1;
+        for (; i < max_iter; ++i)
         {
             double f = f_rosen(A, x);
             Vector g = d_f_rosen(A, x);
@@ -185,6 +190,7 @@ int main()
             }
         }
 
+        printf("Iter Count: %d\tFunction count: %d\n", i, counter);
         save_history(x_history, "x", A, method);
         save_history(p_history, "p", A, method);
         save_history(f_history, "f", A, method);
@@ -198,6 +204,8 @@ int main()
     {
         for (auto&& A : As)
         {
+            counter = 0;
+
             minimize(A, method);
         }
     }

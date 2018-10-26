@@ -139,8 +139,8 @@ double Rosenbrock::LineBackTrack(const VectorView& x, double f, const VectorView
     double alpha = alpha_0;
     double c_grad_p = c * (grad * p);
 
-    Vector x_alpha_p(x.size());
-    linalgcpp::Add(1.0, x, alpha, p, 0.0, x_alpha_p);
+    Vector x_alpha_p(x);
+    x_alpha_p.Add(alpha, p);
 
     int iter = 1;
     for (; iter < max_iter; ++iter)
@@ -197,6 +197,20 @@ void write_history(const std::vector<double>& x, const std::string& prefix, doub
     }
 }
 
+void alternate_x(Vector& x)
+{
+    int n = x.size();
+
+    for (int i = 0; i < n; i += 2)
+    {
+        x[i] = -1.2;
+    }
+    for (int i = 1; i < n; i += 2)
+    {
+        x[i] = 1.0;
+    }
+}
+
 int main(int argc, char ** argv)
 {
     // Line Backtrack Params
@@ -248,11 +262,14 @@ int main(int argc, char ** argv)
 
     // Initial point
     Vector x(dim);
-    double lo = 1.0 - variance;
-    double hi = 1.0 + variance;
-    linalgcpp::Randomize(x, lo, hi);
+
+    // Random w/ uniform variance
+    //double lo = 1.0 - variance;
+    //double hi = 1.0 + variance;
+    //linalgcpp::Randomize(x, lo, hi);
 
     // Alternate -1.2, 1.0, -1.2
+    alternate_x(x);
 
     //x[0] = -1.2;
     //x[1] = 1.0;
@@ -274,11 +291,13 @@ int main(int argc, char ** argv)
     Vector p(dim);
     Vector ones(dim, 1.0);
     Vector error(dim);
+    double f = std::numeric_limits<double>::max();
 
-    for (int i = 1; i < max_iter; ++i)
+    int iter = 1;
+    for (; iter < max_iter; ++iter)
     {
         // Compute f(x)
-        double f = rb.Eval(x);
+        f = rb.Eval(x);
 
         // Compute gradient at x
         Gradient rb_grad(rb, x);
@@ -318,8 +337,8 @@ int main(int argc, char ** argv)
             f_history.push_back(f);
         }
 
-        printf("%d: f: %.2e p: %.2e e: %.2e alpha: %.2e grad*p: %.2e cg: %d\n",
-                i, f, p_norm, e_norm, alpha, grad * p, cg.GetNumIterations());
+        //printf("%d: f: %.2e p: %.2e e: %.2e alpha: %.2e grad*p: %.2e cg: %d\n",
+                //iter, f, p_norm, e_norm, alpha, grad * p, cg.GetNumIterations());
 
         if (p_norm < tol)
         {
@@ -327,7 +346,7 @@ int main(int argc, char ** argv)
         }
     }
 
-    printf("Total Function Evals: %d\n", rb.num_evals);
+    printf("f(x): %.2e Iter: %d\tTotal Function Evals: %d\n", f, iter, rb.num_evals);
 
     if (save_history)
     {

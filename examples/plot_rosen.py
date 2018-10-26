@@ -30,20 +30,24 @@ def plot_figs(x_hist, p_hist, f_hist, A, method):
         c = np.linspace(0, 1.0, len(x_hist))
 
         scatter = ax.scatter(x=x_hist[:, 0], y=x_hist[:, 1], c=c, cmap=plt.get_cmap(
-            "YlGn_r"), zorder=1, label=method)
-        ax.legend()
+            "YlGn_r"), zorder=1)
+        #ax.legend()
 
     ax = fig.add_subplot(222)
     #plot_type = ax.semilogy if len(x_hist) > 30 else ax.plot
-    plot_type = ax.semilogy if m != "Newton" else ax.plot
-    plot_type(p_hist, "b", label="||grad f||")
+    #plot_type = ax.semilogy if m != "Newton" else ax.plot
+    ax.semilogy(p_hist, "b", label="||grad f||")
     ax.legend()
 
     ax = fig.add_subplot(224)
-    plot_type = ax.semilogy if m != "Newtwon" else ax.plot
-    plot_type(f_hist, "r", label="f(x)")
+    #plot_type = ax.semilogy if m != "Newtwon" else ax.plot
+    ax.semilogy(f_hist, "r", label="f(x)")
     ax.legend()
 
+    plt.suptitle(m + " Method, A: " + str(float(A)))
+
+    #plt.tight_layout()
+    plt.savefig(m+"."+str(A)+".png", dpi=300)
     plt.show()
 
 def fvals(x_hist):
@@ -65,14 +69,14 @@ def hess_grad(x_hist):
         print("H(g(x))\n", scipy.optimize.rosen_hess_prod(i, g))
 
 if __name__ == "__main__":
-    #As = [1, 100]
-    #methods = ["Newton", "SteepestDescent"]
-    As = [100]
+    As = [1, 100]
+    methods = ["Newton", "SteepestDescent"]
+    #As = [100]
     #As = [1]
-    methods = ["Newton"]
+    #methods = ["Newton"]
 
     for A, m in itertools.product(As, methods):
-        #x_hist = np.loadtxt("x." + str(A) + ".000000." + m + ".txt")
+        x_hist = np.loadtxt("x." + str(A) + ".000000." + m + ".txt")
         p_hist = np.loadtxt("p." + str(A) + ".000000." + m + ".txt")
         f_hist = np.loadtxt("f." + str(A) + ".000000." + m + ".txt")
 
@@ -82,5 +86,5 @@ if __name__ == "__main__":
         #grads(x_hist)
         #hess(x_hist)
         #hess_grad(x_hist)
-        #plot_figs(x_hist, p_hist, f_hist, A, m)
-        plot_figs([], p_hist, f_hist, A, m)
+        plot_figs(x_hist, p_hist, f_hist, A, m)
+        #plot_figs([], p_hist, f_hist, A, m)
