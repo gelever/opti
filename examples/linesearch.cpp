@@ -113,7 +113,7 @@ int main(int argc, char ** argv)
 
     arg_parser.Parse(rb_A, "--A", "A in Rosenbrock Function");
     arg_parser.Parse(dim, "--dim", "Dimensions");
-    arg_parser.Parse(method, "--method", "Method to use: [Newton, QuasiNewton, SteepestDescent, Dynamic]");
+    arg_parser.Parse(method, "--method", "Method to use: [Newton, SteepestDescent, Dynamic]");
     arg_parser.Parse(initial_x, "--initial-x", "Set initial x [Standard, Random]");
     arg_parser.Parse(variance, "--var", "Inital vector uniform random variance about solution");
 

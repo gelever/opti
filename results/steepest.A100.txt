@@ -1,15 +1,17 @@
 Program Options:
-  --A               100    A in Rosenbrock Function
-  --alpha           1      Inital alpha in linesearch
-  --alpha-max-iter  20     Maximum iterations in linesearch
-  --c               0.01   C factor in linesearch
-  --dim             2      Dimensions
-  --hist            true   Save iteration history
-  --iter            20000  Max iterations
-  --rho             0.5    Reduction factor in linesearch
-  --tol             0.001  Solve tolerance.
-  --var             0.05   Inital vector variance
-  --verbose         true   Show iteration information
+  --A               100              A in Rosenbrock Function
+  --alpha           1                Inital alpha in linesearch
+  --alpha-max-iter  20               Maximum iterations in linesearch
+  --c               0.01             C factor in linesearch
+  --dim             2                Dimensions
+  --hist            false            Save iteration history
+  --initial-x       Standard         Set initial x [Standard, Random]
+  --iter            20000            Max iterations
+  --method          SteepestDescent  Method to use: [Newton, SteepestDescent, Dynamic]
+  --rho             0.5              Reduction factor in linesearch
+  --tol             0.001            Solve tolerance.
+  --var             0.05             Inital vector uniform random variance about solution
+  --verbose         true             Show iteration information
 1: f: 2.42e+01 p: 2.33e+02 e: 1.99e+00 alpha: 9.77e-04 grad*p: -5.42e+04 cg: 0
 2: f: 5.10e+00 p: 4.39e+01 e: 2.06e+00 alpha: 1.95e-03 grad*p: -1.93e+03 cg: 0
 3: f: 5.05e+00 p: 4.55e+01 e: 2.02e+00 alpha: 9.77e-04 grad*p: -2.07e+03 cg: 0
@@ -5059,4 +5061,3 @@ Program Options:
 5047: f: 6.12e-07 p: 1.01e-03 e: 1.75e-03 alpha: 1.95e-03 grad*p: -1.03e-06 cg: 0
 5048: f: 6.11e-07 p: 9.89e-04 e: 1.75e-03 alpha: 3.91e-03 grad*p: -9.77e-07 cg: 0
 f(x): 6.11e-07 Iter: 5048	Total Function Evals: 55149
-Fallback:5048
