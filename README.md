@@ -19,17 +19,19 @@ Currently implemented:
 From the [results](results) directory:
 ```txt
 Program Options:
-  --A               100    A in Rosenbrock Function
-  --alpha           1      Inital alpha in linesearch
-  --alpha-max-iter  20     Maximum iterations in linesearch
-  --c               0.01   C factor in linesearch
-  --dim             2      Dimensions
-  --hist            true   Save iteration history
-  --iter            20000  Max iterations
-  --rho             0.5    Reduction factor in linesearch
-  --tol             0.001  Solve tolerance.
-  --var             0.05   Inital vector variance
-  --verbose         true   Show iteration information
+  --A               100       A in Rosenbrock Function
+  --alpha           1         Inital alpha in linesearch
+  --alpha-max-iter  20        Maximum iterations in linesearch
+  --c               0.01      C factor in linesearch
+  --dim             2         Dimensions
+  --hist            false     Save iteration history
+  --initial-x       Standard  Set initial x [Standard, Random]
+  --iter            20000     Max iterations
+  --method          Newton    Method to use: [Newton, SteepestDescent, Dynamic]
+  --rho             0.5       Reduction factor in linesearch
+  --tol             0.001     Solve tolerance.
+  --var             0.05      Inital vector uniform random variance about solution
+  --verbose         true      Show iteration information
 1: f: 2.42e+01 p: 3.81e-01 e: 2.21e+00 alpha: 1.00e+00 grad*p: -3.88e+01 cg: 4
 2: f: 4.73e+00 p: 4.95e+00 e: 1.94e+00 alpha: 1.25e-01 grad*p: -8.43e+00 cg: 4
 3: f: 4.09e+00 p: 2.68e-01 e: 1.83e+00 alpha: 1.00e+00 grad*p: -1.28e+00 cg: 4
