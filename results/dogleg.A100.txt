@@ -1,0 +1,40 @@
+Program Options:
+  --A          100    A in Rosenbrock Function
+  --delta      0.5    Inital delta in trust region
+  --delta-max  1      Maximum delta in trust region
+  --delta-tol  1e-12  Tolerance of delta in trust region
+  --dim        2      Dimensions
+  --eta        0.001  Accept tolerance
+  --hist       true   Save iteration history
+  --iter       20000  Max iterations
+  --tol        0.001  Solve tolerance.
+  --var        0.05   Inital vector variance
+  --verbose    true   Show iteration information
+1: f: 4.73e+00 g: 232.86768775 e: 2.21e+00 grad*p: -3.88e+01 cg: 3
+2: f: 4.00e+00 g: 4.63942621 e: 1.98e+00 grad*p: -8.66e-01 cg: 4
+3: f: 3.45e+00 g: 17.36913712 e: 1.80e+00 grad*p: -1.27e+00 cg: 3
+4: f: 2.56e+00 g: 28.38327784 e: 1.73e+00 grad*p: -1.46e+00 cg: 3
+5: f: 2.56e+00 g: 6.41732211 e: 1.73e+00 grad*p: -1.56e+00 cg: 3
+6: f: 2.09e+00 g: 6.41732211 e: 1.66e+00 grad*p: -5.83e-01 cg: 3
+7: f: 1.65e+00 g: 7.98662307 e: 1.57e+00 grad*p: -6.83e-01 cg: 3
+8: f: 1.22e+00 g: 9.70660887 e: 1.48e+00 grad*p: -6.41e-01 cg: 3
+9: f: 9.77e-01 g: 4.88717910 e: 1.35e+00 grad*p: -5.52e-01 cg: 3
+10: f: 6.19e-01 g: 9.53356796 e: 1.24e+00 grad*p: -5.94e-01 cg: 3
+11: f: 5.46e-01 g: 1.67811161 e: 1.02e+00 grad*p: -3.67e-01 cg: 4
+12: f: 2.95e-01 g: 12.21859483 e: 9.61e-01 grad*p: -4.69e-01 cg: 3
+13: f: 2.68e-01 g: 0.82060762 e: 9.02e-01 grad*p: -5.11e-02 cg: 3
+14: f: 2.08e-01 g: 4.00864769 e: 8.40e-01 grad*p: -8.36e-02 cg: 3
+15: f: 1.78e-01 g: 0.62770250 e: 7.78e-01 grad*p: -3.91e-02 cg: 4
+16: f: 2.08e-01 g: 2.47836358 e: 8.40e-01 grad*p: 2.09e-02 cg: 3
+17: f: 1.43e-01 g: 0.75817268 e: 7.17e-01 grad*p: -7.80e-02 cg: 3
+18: f: 9.24e-02 g: 1.53409778 e: 5.92e-01 grad*p: -6.31e-02 cg: 3
+19: f: 5.47e-02 g: 1.74918337 e: 4.68e-01 grad*p: -4.88e-02 cg: 3
+20: f: 2.84e-02 g: 1.63110636 e: 3.43e-01 grad*p: -3.53e-02 cg: 3
+21: f: 1.16e-02 g: 1.55648388 e: 2.18e-01 grad*p: -2.43e-02 cg: 3
+22: f: 2.92e-03 g: 1.48529220 e: 1.00e-01 grad*p: -1.43e-02 cg: 3
+23: f: 3.44e-04 g: 1.24243804 e: 3.82e-02 grad*p: -4.33e-03 cg: 3
+24: f: 9.63e-06 g: 0.30649265 e: 5.19e-03 grad*p: -6.12e-04 cg: 3
+25: f: 1.06e-08 g: 0.09207155 e: 2.10e-04 grad*p: -1.88e-05 cg: 3
+26: f: 1.44e-14 g: 0.00189165 e: 1.97e-07 grad*p: -2.12e-08 cg: 3
+27: f: 2.58e-26 g: 0.00000365 e: 3.28e-13 grad*p: -2.88e-14 cg: 2
+f(x): 2.58e-26 Iter: 27	Total Function Evals: 28

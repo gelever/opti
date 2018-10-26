@@ -130,7 +130,7 @@ double Rosenbrock::Eval(const VectorView& x) const
     return sum;
 }
 
-void alternate_x(Vector& x)
+void alternate_x(VectorView x)
 {
     int n = x.size();
 
@@ -143,5 +143,28 @@ void alternate_x(Vector& x)
         x[i] = 1.0;
     }
 }
+
+Vector set_x(int dim, const std::string& method, double variance)
+{
+    Vector x(dim);
+
+    if (method == "Standard")
+    {
+        alternate_x(x);
+    }
+    else if (method == "Random")
+    {
+        double lo = 1.0 - variance;
+        double hi = 1.0 + variance;
+        linalgcpp::Randomize(x, lo, hi);
+    }
+    else
+    {
+        throw std::runtime_error("Invalid inital x method!");
+    }
+
+    return x;
+}
+
 
 } // namespace rosenbrock

@@ -1,0 +1,21 @@
+Program Options:
+  --A               1      A in Rosenbrock Function
+  --alpha           1      Inital alpha in linesearch
+  --alpha-max-iter  20     Maximum iterations in linesearch
+  --c               0.01   C factor in linesearch
+  --dim             2      Dimensions
+  --hist            true   Save iteration history
+  --iter            20000  Max iterations
+  --rho             0.5    Reduction factor in linesearch
+  --tol             0.001  Solve tolerance.
+  --var             0.05   Inital vector variance
+  --verbose         true   Show iteration information
+1: f: 5.03e+00 p: 2.64e+00 e: 2.58e+00 alpha: 1.00e+00 grad*p: -5.54e+00 cg: 4
+2: f: 2.94e+00 p: 1.38e+00 e: 1.27e+00 alpha: 1.00e+00 grad*p: -4.32e+00 cg: 4
+3: f: 5.75e-01 p: 7.66e-01 e: 6.26e-01 alpha: 1.00e+00 grad*p: -1.00e+00 cg: 4
+4: f: 1.94e-01 p: 5.28e-01 e: 1.03e-01 alpha: 1.00e+00 grad*p: -3.79e-01 cg: 4
+5: f: 2.11e-03 p: 1.01e-01 e: 2.62e-03 alpha: 1.00e+00 grad*p: -4.20e-03 cg: 4
+6: f: 4.40e-06 p: 2.61e-03 e: 2.48e-06 alpha: 1.00e+00 grad*p: -8.81e-06 cg: 4
+7: f: 1.18e-12 p: 2.48e-06 e: 1.47e-12 alpha: 1.00e+00 grad*p: -2.35e-12 cg: 4
+f(x): 1.18e-12 Iter: 7	Total Function Evals: 14
+Fallback:0

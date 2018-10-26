@@ -44,6 +44,39 @@ double LineBackTrack(const Rosenbrock& rb, const VectorView& x,
     return alpha;
 }
 
+void update_p(const std::string& method, const Rosenbrock& rb,
+              const VectorView& x, const Operator& hess_inv,
+              const VectorView& grad, VectorView p)
+{
+    if (method == "Dynamic")
+    {
+        // Try solving, but fall back to steepest descent on failure
+        try {
+            p = 0.0;
+            hess_inv.Mult(grad, p);
+        }
+        catch(const std::runtime_error& e)
+        {
+            p.Set(grad);
+        }
+    }
+    else if (method == "Newton")
+    {
+        p = 0.0;
+        hess_inv.Mult(grad, p);
+    }
+    else if (method == "SteepestDescent")
+    {
+            p.Set(grad);
+    }
+    else
+    {
+        throw std::runtime_error("Invalid Method Selected!");
+    }
+
+    p *= -1.0;
+}
+
 int main(int argc, char ** argv)
 {
     // Line Backtrack Params
@@ -56,11 +89,14 @@ int main(int argc, char ** argv)
     double tol = 1e-3;
     int max_iter = 20000;
     bool save_history = false;
+    bool verbose = false;
 
     // Problem Params
     double rb_A = 100.0;
-    int dim = 100000;
+    int dim = 2;
     double variance = 0.05;
+    std::string method = "Dynamic";
+    std::string initial_x = "Standard";
 
     // Linesearch params
     double alpha_0_linesearch = 1.0;
@@ -73,10 +109,13 @@ int main(int argc, char ** argv)
     arg_parser.Parse(tol, "--tol", "Solve tolerance.");
     arg_parser.Parse(max_iter, "--iter", "Max iterations");
     arg_parser.Parse(save_history, "--hist", "Save iteration history");
+    arg_parser.Parse(verbose, "--verbose", "Show iteration information");
 
     arg_parser.Parse(rb_A, "--A", "A in Rosenbrock Function");
     arg_parser.Parse(dim, "--dim", "Dimensions");
-    arg_parser.Parse(variance, "--var", "Inital vector variance");
+    arg_parser.Parse(method, "--method", "Method to use: [Newton, QuasiNewton, SteepestDescent, Dynamic]");
+    arg_parser.Parse(initial_x, "--initial-x", "Set initial x [Standard, Random]");
+    arg_parser.Parse(variance, "--var", "Inital vector uniform random variance about solution");
 
     arg_parser.Parse(alpha_0_linesearch, "--alpha", "Inital alpha in linesearch");
     arg_parser.Parse(c_linesearch, "--c", "C factor in linesearch");
@@ -94,18 +133,7 @@ int main(int argc, char ** argv)
     arg_parser.ShowOptions();
 
     // Initial point
-    Vector x(dim);
-
-    // Random w/ uniform variance
-    double lo = 1.0 - variance;
-    double hi = 1.0 + variance;
-    linalgcpp::Randomize(x, lo, hi);
-
-    // Alternate -1.2, 1.0, -1.2
-    //alternate_x(x);
-
-    //x[0] = -1.2;
-    //x[1] = 1.0;
+    Vector x = set_x(dim, initial_x, variance);
 
     // History
     std::vector<Vector> x_history(1, x);
@@ -128,7 +156,6 @@ int main(int argc, char ** argv)
     Vector error(dim);
     double f = std::numeric_limits<double>::max();
 
-    int num_fallback = 0;
     int iter = 1;
     for (; iter < max_iter; ++iter)
     {
@@ -139,26 +166,12 @@ int main(int argc, char ** argv)
         Gradient rb_grad(rb, x);
         rb_grad.Mult(x, grad);
 
-        // Solve p = H \ grad
-        try {
-            Hessian rb_hess(rb, x);
-            cg.SetOperator(rb_hess);
-            p = 0.0;
-            cg.Mult(grad, p);
-        }
-        // Fallback to steepest descent
-        catch(const std::runtime_error& e)
-        {
-            num_fallback++;
-            p = grad;
-        }
+        // Update hessian
+        Hessian rb_hess(rb, x);
+        cg.SetOperator(rb_hess);
 
-        //HessianDiagInv rb_hess(rb, x);
-        //rb_hess.Mult(grad, p);
-
-        //p = grad;
-
-        p *= -1.0;
+        // Update p
+        update_p(method, rb, x, cg, grad, p);
 
         // Find alpha using line backtracking
         double alpha = LineBackTrack(rb, x, f, grad, p,
@@ -181,8 +194,11 @@ int main(int argc, char ** argv)
             f_history.push_back(f);
         }
 
-        //printf("%d: f: %.2e p: %.2e e: %.2e alpha: %.2e grad*p: %.2e cg: %d\n",
-                //iter, f, p_norm, e_norm, alpha, grad * p, cg.GetNumIterations());
+        if (verbose)
+        {
+            printf("%d: f: %.2e p: %.2e e: %.2e alpha: %.2e grad*p: %.2e cg: %d\n",
+                    iter, f, p_norm, e_norm, alpha, grad * p, cg.GetNumIterations());
+        }
 
         if (p_norm < tol)
         {
@@ -191,7 +207,6 @@ int main(int argc, char ** argv)
     }
 
     printf("f(x): %.2e Iter: %d\tTotal Function Evals: %d\n", f, iter, rb.num_evals);
-    printf("Fallback:%d\n", num_fallback);
 
     if (save_history)
     {

@@ -3,11 +3,8 @@
 add_executable(linesearch linesearch.cpp)
 target_link_libraries(linesearch opti)
 
-add_executable(ndim_linesearch ndim_linesearch.cpp)
-target_link_libraries(ndim_linesearch opti)
-
-add_executable(ndim_trustregion ndim_trustregion.cpp)
-target_link_libraries(ndim_trustregion opti)
+add_executable(trustregion trustregion.cpp)
+target_link_libraries(trustregion opti)
 
 configure_file(
   "${PROJECT_SOURCE_DIR}/examples/plot_rosen.py"
