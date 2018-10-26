@@ -9,6 +9,7 @@ enable_testing()
 find_package(linalgcpp REQUIRED)
 
 add_library(opti
+    src/utilities.cpp
     src/opti.cpp
 )
 
