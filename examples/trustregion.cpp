@@ -194,8 +194,8 @@ int main(int argc, char ** argv)
 
         if (verbose)
         {
-            printf("%d: f: %.2e g: %.8f e: %.2e grad*p: %.2e cg: %d delta: %.3f\n",
-                    iter, f, g_norm, e_norm, grad * p, cg.GetNumIterations(), delta);
+            printf("%d: f: %.2e g: %.8f e: %.2e grad*p: %.2e cg: %d delta: %.3f rho: %.3f\n",
+                    iter, f, g_norm, e_norm, grad * p, cg.GetNumIterations(), delta, rho);
         }
 
         if (g_norm < tol)

@@ -149,8 +149,6 @@ int main(int argc, char ** argv)
 
     // Workspace
     Vector grad(dim);
-    Vector hess(dim);
-    Vector h_inv(dim);
     Vector p(dim);
     Vector ones(dim, 1.0);
     Vector error(dim);
