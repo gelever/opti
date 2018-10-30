@@ -10,38 +10,45 @@
 
 using namespace rosenbrock;
 
-double LineBackTrack(const Rosenbrock& rb, const VectorView& x,
-        double f, const VectorView& grad, const VectorView& p,
-        double alpha_0, double c, double rho, int max_iter)
+struct LineSearchParams
 {
-    double alpha = alpha_0;
-    double c_grad_p = c * (grad * p);
+    double alpha_0;
+    double c;
+    double rho;
+    int max_iter;
+};
 
-    Vector x_alpha_p(x);
-    x_alpha_p.Add(alpha, p);
+void LineBackTrack(const Rosenbrock& rb, VectorView x,
+        double& f, const VectorView& grad, const VectorView& p,
+        const LineSearchParams& ls_params)
+{
+    double alpha = ls_params.alpha_0;
+    double f_0 = f;
+    double c_grad_p = ls_params.c * (grad * p);
+
+    Vector x_0(x);
+    linalgcpp::Add(1.0, x_0, alpha, p, 0.0, x);
 
     int iter = 1;
-    for (; iter < max_iter; ++iter)
+    for (; iter < ls_params.max_iter; ++iter)
     {
         // Check Alpha
-        double f_i = rb.Eval(x_alpha_p);
+        f = rb.Eval(x);
 
-        if (f_i < f + (alpha * c_grad_p))
+        if (f < f_0 + (alpha * c_grad_p))
         {
             break;
         }
 
         // Update x + alpha * p
-        alpha *= rho;
-        linalgcpp::Add(1.0, x, alpha, p, 0.0, x_alpha_p);
+        alpha *= ls_params.rho;
+        linalgcpp::Add(1.0, x_0, alpha, p, 0.0, x);
     }
 
-    if (iter == max_iter)
+    if (iter == ls_params.max_iter)
     {
         throw std::runtime_error("Maximum number of alpha iterations!");
     }
-
-    return alpha;
 }
 
 void update_p(const std::string& method, const Rosenbrock& rb,
@@ -79,12 +86,6 @@ void update_p(const std::string& method, const Rosenbrock& rb,
 
 int main(int argc, char ** argv)
 {
-    // Line Backtrack Params
-    double alpha_0 = 1.0;
-    double c = 0.01;
-    double rho = 0.5;
-    int alpha_max_iter = 2000;
-
     // Iteration Params
     double tol = 1e-3;
     int max_iter = 20000;
@@ -99,10 +100,11 @@ int main(int argc, char ** argv)
     std::string initial_x = "Standard";
 
     // Linesearch params
-    double alpha_0_linesearch = 1.0;
-    double c_linesearch = 0.01;
-    double rho_linesearch = 0.50;
-    int max_iter_linesearch = 20;
+    LineSearchParams ls_params;
+    ls_params.alpha_0 = 1.0;
+    ls_params.c = 0.01;
+    ls_params.rho = 0.50;
+    ls_params.max_iter = 20;
 
     linalgcpp::ArgParser arg_parser(argc, argv);
 
@@ -117,10 +119,10 @@ int main(int argc, char ** argv)
     arg_parser.Parse(initial_x, "--initial-x", "Set initial x [Standard, Random]");
     arg_parser.Parse(variance, "--var", "Inital vector uniform random variance about solution");
 
-    arg_parser.Parse(alpha_0_linesearch, "--alpha", "Inital alpha in linesearch");
-    arg_parser.Parse(c_linesearch, "--c", "C factor in linesearch");
-    arg_parser.Parse(rho_linesearch, "--rho", "Reduction factor in linesearch");
-    arg_parser.Parse(max_iter_linesearch, "--alpha-max-iter", "Maximum iterations in linesearch");
+    arg_parser.Parse(ls_params.alpha_0, "--alpha", "Inital alpha in linesearch");
+    arg_parser.Parse(ls_params.c, "--c", "C factor in linesearch");
+    arg_parser.Parse(ls_params.rho, "--rho", "Reduction factor in linesearch");
+    arg_parser.Parse(ls_params.max_iter, "--alpha-max-iter", "Maximum iterations in linesearch");
 
     if (!arg_parser.IsGood())
     {
@@ -152,14 +154,11 @@ int main(int argc, char ** argv)
     Vector p(dim);
     Vector ones(dim, 1.0);
     Vector error(dim);
-    double f = std::numeric_limits<double>::max();
+    double f = f = rb.Eval(x);
 
     int iter = 1;
     for (; iter < max_iter; ++iter)
     {
-        // Compute f(x)
-        f = rb.Eval(x);
-
         // Compute gradient at x
         Gradient rb_grad(rb, x);
         rb_grad.Mult(x, grad);
@@ -171,13 +170,8 @@ int main(int argc, char ** argv)
         // Update p
         update_p(method, rb, x, cg, grad, p);
 
-        // Find alpha using line backtracking
-        double alpha = LineBackTrack(rb, x, f, grad, p,
-                alpha_0_linesearch,
-                c_linesearch,
-                rho_linesearch,
-                max_iter_linesearch);
-        x.Add(alpha, p);
+        // Update x using line backtracking
+        LineBackTrack(rb, x, f, grad, p, ls_params);
 
         // Compute error
         linalgcpp::Sub(ones, x, error);
@@ -194,8 +188,8 @@ int main(int argc, char ** argv)
 
         if (verbose)
         {
-            printf("%d: f: %.2e p: %.2e e: %.2e alpha: %.2e grad*p: %.2e cg: %d\n",
-                    iter, f, p_norm, e_norm, alpha, grad * p, cg.GetNumIterations());
+            printf("%d: f: %.2e p: %.2e e: %.2e grad*p: %.2e cg: %d\n",
+                    iter, f, p_norm, e_norm, grad * p, cg.GetNumIterations());
         }
 
         if (p_norm < tol)
