@@ -1,28 +1,36 @@
 Program Options:
-  --A          1      A in Rosenbrock Function
-  --delta      0.5    Inital delta in trust region
-  --delta-max  1      Maximum delta in trust region
-  --delta-tol  1e-12  Tolerance of delta in trust region
-  --dim        2      Dimensions
-  --eta        0.001  Accept tolerance
-  --hist       true   Save iteration history
-  --iter       20000  Max iterations
-  --tol        0.001  Solve tolerance.
-  --var        0.05   Inital vector variance
-  --verbose    true   Show iteration information
-1: f: 3.08e+00 g: 6.57119046 e: 1.74e+00 grad*p: -2.91e+00 cg: 3
-2: f: 1.98e+00 g: 2.65768167 e: 1.27e+00 grad*p: -1.33e+00 cg: 3
-3: f: 8.59e-01 g: 2.26825324 e: 1.01e+00 grad*p: -1.13e+00 cg: 3
-4: f: 8.59e-01 g: 2.09379185 e: 1.01e+00 grad*p: -2.09e+00 cg: 3
-5: f: 3.96e-01 g: 2.09379185 e: 9.01e-01 grad*p: -5.23e-01 cg: 3
-6: f: 2.84e-01 g: 1.52775742 e: 7.34e-01 grad*p: -7.59e-01 cg: 2
-7: f: 1.23e-01 g: 1.94810434 e: 6.93e-01 grad*p: -2.44e-01 cg: 2
-8: f: 7.36e-02 g: 0.71189613 e: 5.96e-01 grad*p: -8.33e-02 cg: 3
-9: f: 5.09e-02 g: 0.28816573 e: 4.82e-01 grad*p: -3.60e-02 cg: 3
-10: f: 2.57e-02 g: 0.37501163 e: 3.64e-01 grad*p: -3.75e-02 cg: 3
-11: f: 1.20e-02 g: 0.17490145 e: 2.42e-01 grad*p: -2.03e-02 cg: 2
-12: f: 2.48e-03 g: 0.18762443 e: 1.18e-01 grad*p: -1.43e-02 cg: 3
-13: f: 6.42e-06 g: 0.04914325 e: 5.04e-03 grad*p: -4.84e-03 cg: 3
-14: f: 3.68e-11 g: 0.00724383 e: 1.46e-05 grad*p: -1.28e-05 cg: 2
-15: f: 1.56e-21 g: 0.00000562 e: 7.85e-11 grad*p: -7.35e-11 cg: 2
-f(x): 1.56e-21 Iter: 15	Total Function Evals: 16
+  --A          1         A in Rosenbrock Function
+  --delta      0.5       Inital delta in trust region
+  --delta-max  1         Maximum delta in trust region
+  --delta-tol  1e-12     Tolerance of delta in trust region
+  --dim        2         Dimensions
+  --eta        0.001     Accept tolerance
+  --hist       true      Save iteration history
+  --initial-x  Standard  Set initial x [Standard, Random]
+  --iter       20000     Max iterations
+  --method     Dogleg    Method to use: [CauchyPoint, Dogleg]
+  --tol        0.001     Solve tolerance.
+  --var        0.05      Inital vector uniform random variance about solution
+  --verbose    true      Show iteration information
+1: f: 3.08e+00 g: 2.65768167 p: 0.50000000 e: 2.20e+00 grad*p: -1.32e+00 cg: 3 delta: 0.500 rho: 0.460
+2: f: 1.98e+00 g: 2.26825324 p: 0.50000000 e: 1.74e+00 grad*p: -1.05e+00 cg: 3 delta: 0.500 rho: 0.618
+3: f: 8.59e-01 g: 2.09379185 p: 0.50000000 e: 1.27e+00 grad*p: -1.02e+00 cg: 3 delta: 1.000 rho: 1.027
+4: f: 8.59e-01 g: 2.09379185 p: 1.00000000 e: 1.27e+00 grad*p: -2.09e+00 cg: 3 delta: 0.250 rho: -0.164
+5: f: 3.96e-01 g: 1.52775742 p: 0.25000000 e: 1.01e+00 grad*p: -3.77e-01 cg: 3 delta: 0.500 rho: 0.820
+6: f: 2.84e-01 g: 1.94810434 p: 0.50000000 e: 9.01e-01 grad*p: 8.77e-01 cg: 2 delta: 0.125 rho: 0.100
+7: f: 1.23e-01 g: 0.71189613 p: 0.12500000 e: 7.34e-01 grad*p: -8.42e-02 cg: 2 delta: 0.125 rho: 0.486
+8: f: 7.36e-02 g: 0.28816573 p: 0.12500000 e: 6.93e-01 grad*p: -1.53e-02 cg: 3 delta: 0.125 rho: 0.415
+9: f: 5.09e-02 g: 0.37501163 p: 0.12500000 e: 5.96e-01 grad*p: -8.42e-03 cg: 3 delta: 0.125 rho: 0.469
+10: f: 2.57e-02 g: 0.17490145 p: 0.12500000 e: 4.82e-01 grad*p: -1.29e-02 cg: 3 delta: 0.125 rho: 0.506
+11: f: 1.20e-02 g: 0.18762443 p: 0.12500000 e: 3.64e-01 grad*p: -6.79e-03 cg: 2 delta: 0.125 rho: 0.514
+12: f: 2.48e-03 g: 0.04914325 p: 0.12500000 e: 2.42e-01 grad*p: -4.82e-03 cg: 3 delta: 0.125 rho: 0.494
+13: f: 6.42e-06 g: 0.00724383 p: 0.11272711 e: 1.18e-01 grad*p: -1.70e-04 cg: 3 delta: 0.125 rho: 0.341
+14: f: 3.68e-11 g: 0.00000562 p: 0.00502263 e: 5.04e-03 grad*p: -2.34e-08 cg: 2 delta: 0.125 rho: 0.334
+
+Final Stats:
+------------------------
+f(x):	3.68e-11
+Iter:	14
+Function Evals:	15
+Grad Evals:	14
+Hessian Apply:	57

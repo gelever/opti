@@ -1,0 +1,38 @@
+Program Options:
+  --A          1            A in Rosenbrock Function
+  --delta      0.5          Inital delta in trust region
+  --delta-max  1            Maximum delta in trust region
+  --delta-tol  1e-12        Tolerance of delta in trust region
+  --dim        2            Dimensions
+  --eta        0.001        Accept tolerance
+  --hist       true         Save iteration history
+  --initial-x  Standard     Set initial x [Standard, Random]
+  --iter       20000        Max iterations
+  --method     CauchyPoint  Method to use: [CauchyPoint, Dogleg]
+  --tol        0.001        Solve tolerance.
+  --var        0.05         Inital vector uniform random variance about solution
+  --verbose    true         Show iteration information
+1: f: 3.41e+00 g: 2.42489535 p: 0.40274844 e: 2.20e+00 grad*p: -8.66e-01 cg: 0 delta: 0.500 rho: 0.408
+2: f: 2.37e+00 g: 2.25359080 p: 0.50000000 e: 1.80e+00 grad*p: -1.03e+00 cg: 0 delta: 0.500 rho: 0.655
+3: f: 1.23e+00 g: 2.27659972 p: 0.50000000 e: 1.34e+00 grad*p: -1.10e+00 cg: 0 delta: 1.000 rho: 1.074
+4: f: 5.96e-01 g: 3.04475761 p: 1.00000000 e: 1.07e+00 grad*p: 3.04e+00 cg: 0 delta: 1.000 rho: 0.252
+5: f: 1.81e-01 g: 0.65688980 p: 0.24462596 e: 9.37e-01 grad*p: -1.28e-01 cg: 0 delta: 1.000 rho: 0.372
+6: f: 1.34e-01 g: 0.47993644 p: 0.13755023 e: 8.63e-01 grad*p: -3.39e-03 cg: 0 delta: 1.000 rho: 0.342
+7: f: 1.01e-01 g: 0.58975287 p: 0.15776860 e: 7.68e-01 grad*p: 1.57e-02 cg: 0 delta: 1.000 rho: 0.288
+8: f: 7.59e-02 g: 0.29987862 p: 0.08434375 e: 6.49e-01 grad*p: -2.07e-03 cg: 0 delta: 1.000 rho: 0.343
+9: f: 5.45e-02 g: 0.54076213 p: 0.15983127 e: 6.04e-01 grad*p: 7.92e-03 cg: 0 delta: 1.000 rho: 0.298
+10: f: 3.76e-02 g: 0.18774694 p: 0.06098019 e: 4.63e-01 grad*p: -1.32e-03 cg: 0 delta: 1.000 rho: 0.342
+11: f: 2.09e-02 g: 0.45673105 p: 0.19350262 e: 4.39e-01 grad*p: 4.48e-03 cg: 0 delta: 1.000 rho: 0.307
+12: f: 1.08e-02 g: 0.09230471 p: 0.04300727 e: 2.55e-01 grad*p: -6.69e-04 cg: 0 delta: 1.000 rho: 0.341
+13: f: 5.37e-04 g: 0.09631392 p: 0.21414078 e: 2.43e-01 grad*p: -1.09e-03 cg: 0 delta: 1.000 rho: 0.346
+14: f: 1.34e-04 g: 0.00966249 p: 0.00833619 e: 2.99e-02 grad*p: -5.98e-06 cg: 0 delta: 1.000 rho: 0.335
+15: f: 3.32e-06 g: 0.00859933 p: 0.02689384 e: 2.78e-02 grad*p: -1.93e-06 cg: 0 delta: 1.000 rho: 0.335
+16: f: 1.45e-07 g: 0.00031594 p: 0.00073802 e: 1.20e-03 grad*p: -4.45e-09 cg: 0 delta: 1.000 rho: 0.333
+
+Final Stats:
+------------------------
+f(x):	1.45e-07
+Iter:	16
+Function Evals:	17
+Grad Evals:	17
+Hessian Apply:	32
