@@ -10,7 +10,7 @@
 
 using namespace rosenbrock;
 
-void DogLeg(const VectorView& grad, const Operator& B, const Operator& B_inv, double delta, VectorView p)
+void CauchyPoint(const VectorView& grad, const Operator& B, double delta, VectorView p)
 {
     double gBg = B.InnerProduct(grad, grad);
     double g_norm = grad.L2Norm();
@@ -19,16 +19,21 @@ void DogLeg(const VectorView& grad, const Operator& B, const Operator& B_inv, do
     if (gBg <= 0.0)
     {
         p.Set(-tau, grad);
-        return;
     }
+    else
+    {
+        p.Set(-1.0 * std::min(tau, (g_norm * g_norm) / gBg), grad);
+    }
+}
 
-    Vector p_c(grad);
-    p_c *= -1.0 * std::min(tau, (g_norm * g_norm) / gBg);
+
+void DogLeg(const VectorView& grad, const Operator& B, const Operator& B_inv, double delta, VectorView p)
+{
+    CauchyPoint(grad, B, delta, p);
 
     // Close enough to trust region boundary
-    if (std::fabs(p_c.L2Norm() - delta) < 2.2204e-15)
+    if (std::fabs(p.L2Norm() - delta) < 2.2204e-15)
     {
-        p.Set(p_c);
         return;
     }
 
@@ -46,21 +51,38 @@ void DogLeg(const VectorView& grad, const Operator& B, const Operator& B_inv, do
         }
 
         // Otherwise use dogleg
-        p_b -= p_c;
+        p_b -= p;
 
-        double b = p_c.Mult(p_b);
+        double b = p.Mult(p_b);
         double a = p_b.Mult(p_b);
-        double c = p_c.Mult(p_c) - (delta * delta);
+        double c = p.Mult(p) - (delta * delta);
 
         double tau_dog = (-b + std::sqrt((b*b) - (a*c))) / a;
 
-        p.Set(p_c);
         p.Add(tau_dog, p_b);
     }
     // Otherwise use Cauchy point
     catch(const std::runtime_error& e)
     {
-        p.Set(p_c);
+        //std::cout << "B not SPD, using Cauchy Point\n";
+    }
+}
+
+
+void ComputeP(const std::string& method, const VectorView& grad, const Operator& B,
+              const Operator& B_inv, double delta, VectorView p)
+{
+    if (method == "CauchyPoint")
+    {
+        CauchyPoint(grad, B, delta, p);
+    }
+    else if (method == "Dogleg")
+    {
+        DogLeg(grad, B, B_inv, delta, p);
+    }
+    else
+    {
+        throw std::runtime_error("Invalid Method Selected!");
     }
 }
 
@@ -82,6 +104,7 @@ int main(int argc, char ** argv)
     double rb_A = 100.0;
     int dim = 2;
     double variance = 0.05;
+    std::string method = "Cauchy";
     std::string initial_x = "Standard";
 
     linalgcpp::ArgParser arg_parser(argc, argv);
@@ -93,6 +116,7 @@ int main(int argc, char ** argv)
 
     arg_parser.Parse(rb_A, "--A", "A in Rosenbrock Function");
     arg_parser.Parse(dim, "--dim", "Dimensions");
+    arg_parser.Parse(method, "--method", "Method to use: [CauchyPoint, Dogleg]");
     arg_parser.Parse(initial_x, "--initial-x", "Set initial x [Standard, Random]");
     arg_parser.Parse(variance, "--var", "Inital vector uniform random variance about solution");
 
@@ -141,10 +165,8 @@ int main(int argc, char ** argv)
     int iter = 1;
     for (; iter < max_iter; ++iter)
     {
-        // Compute dogleg
-        DogLeg(grad, rb_hess, cg, delta, p);
-
-        // Check if p is acceptable
+        // Compute P and check if acceptable
+        ComputeP(method, grad, rb_hess, cg, delta, p);
         linalgcpp::Add(1.0, x, 1.0, p, 0.0, x_propose);
 
         double f_propose = rb.Eval(x_propose);
