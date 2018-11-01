@@ -11,8 +11,9 @@ Use generalized [Rosenbrock function](https://en.wikipedia.org/wiki/Rosenbrock_f
 Currently implemented:
 * [Linesearch](examples/linesearch.cpp):
   * Steepest Descent
-  * Newton method
+  * Newton Method
 * [Trust Region](examples/trustregion.cpp):
+  * Cauchy Point
   * Dogleg 
 
 # Sample Output
