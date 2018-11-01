@@ -137,40 +137,35 @@ int main(int argc, char ** argv)
     // Initial point
     Vector x = set_x(dim, initial_x, variance);
 
-    // History
-    std::vector<Vector> x_history(1, x);
-    std::vector<double> p_history;
-    std::vector<double> f_history;
-
-    // CG Solver initialize
+    // Problem initialize
     Rosenbrock rb(rb_A, dim);
+    Gradient rb_grad(rb, x);
     Hessian rb_hess(rb, x);
     linalgcpp::PCGSolver cg(rb_hess);
-    cg.SetRelTol(1e-24);
-    cg.SetAbsTol(1e-24);
 
     // Workspace
     Vector grad(dim);
     Vector p(dim);
     Vector ones(dim, 1.0);
     Vector error(dim);
-    double f = f = rb.Eval(x);
+
+    double f = rb.Eval(x);
+    double g_norm = grad.L2Norm();
+    double e_norm = error.L2Norm();
+
+    // History
+    std::vector<Vector> x_history;
+    std::vector<double> p_history;
+    std::vector<double> f_history;
 
     int iter = 1;
     for (; iter < max_iter; ++iter)
     {
         // Compute gradient at x
-        Gradient rb_grad(rb, x);
         rb_grad.Mult(x, grad);
 
-        // Update hessian
-        Hessian rb_hess(rb, x);
-        cg.SetOperator(rb_hess);
-
-        // Update p
+        // Update p, update x using line backtracking
         update_p(method, rb, x, cg, grad, p);
-
-        // Update x using line backtracking
         LineBackTrack(rb, x, f, grad, p, ls_params);
 
         // Compute error
@@ -198,7 +193,10 @@ int main(int argc, char ** argv)
         }
     }
 
-    printf("f(x): %.2e Iter: %d\tTotal Function Evals: %d\n", f, iter, rb.num_evals);
+    printf("\nFinal Stats:\n------------------------\n");
+    printf("f(x):\t%.2e\nIter:\t%d\n", f, iter);
+    printf("Function Evals:\t%d\nGrad Evals:\t%d\nHessian Apply:\t%d\n",
+            rb.num_evals, rb_grad.num_evals, rb_hess.num_evals);
 
     if (save_history)
     {

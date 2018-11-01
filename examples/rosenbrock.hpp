@@ -31,7 +31,7 @@ class Hessian : public Operator
 {
     public:
         Hessian(const Rosenbrock& rb_in, const VectorView& x_in)
-            : Operator(rb_in.num_dim), rb(rb_in), x(x_in)
+            : Operator(rb_in.num_dim), rb(rb_in), x(x_in), num_evals(0)
         {}
 
         using Operator::Mult;
@@ -48,17 +48,21 @@ class Hessian : public Operator
             }
 
             output[dim - 1] = (-4.0 * A * x[dim - 2] * input[dim - 2]) + (2.0 * A * input[dim - 1]);
+
+            num_evals++;
         }
 
         const Rosenbrock& rb;
         const VectorView& x;
+
+        mutable int num_evals;
 };
 
 class Gradient : public Operator
 {
     public:
         Gradient(const Rosenbrock& rb_in, const VectorView& x_in)
-            : Operator(rb_in.num_dim), rb(rb_in), x(x_in)
+            : Operator(rb_in.num_dim), rb(rb_in), x(x_in), num_evals(0)
         {}
 
         using Operator::Mult;
@@ -80,10 +84,14 @@ class Gradient : public Operator
             }
 
             df_x[num_dim - 1] = 2.0 * A * (x[num_dim - 1] - std::pow(x[num_dim - 2], 2));
+
+            num_evals++;
         }
 
         const Rosenbrock& rb;
         const VectorView& x;
+
+        mutable int num_evals;
 };
 
 class HessianDiagInv : public Operator

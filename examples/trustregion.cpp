@@ -1,7 +1,7 @@
 /* 
  * Stephan Gelever
  * Math 510
- * HW 2
+ * HW 3
  *
  * Copyright (c) 2018, Stephan Gelever
  */
@@ -115,40 +115,33 @@ int main(int argc, char ** argv)
     Vector x = set_x(dim, initial_x, variance);
     Vector x_propose(dim);
 
-    // History
-    //std::vector<Vector> x_history(1, x);
-    std::vector<Vector> x_history;
-    std::vector<double> g_history;
-    std::vector<double> p_history;
-    std::vector<double> f_history;
+    // Workspace
+    Vector grad(dim);
+    Vector p(dim);
+    Vector ones(dim, 1.0);
+    Vector error = ones - x;
 
-    // CG Solver initialize
+    // Problem initialize
     Rosenbrock rb(rb_A, dim);
+    Gradient rb_grad(rb, x);
     Hessian rb_hess(rb, x);
     linalgcpp::PCGSolver cg(rb_hess);
 
-    // Workspace
-    Vector grad(dim);
-    Vector hess(dim);
-    Vector h_inv(dim);
-    Vector p(dim);
-    Vector ones(dim, 1.0);
-    Vector error(dim);
+    rb_grad.Mult(x, grad);
 
-    // Compute initial f(x)
     double f = rb.Eval(x);
+    double g_norm = grad.L2Norm();
+    double e_norm = error.L2Norm();
+
+    // History
+    std::vector<Vector> x_history(1, x);
+    std::vector<double> g_history(1, g_norm);
+    std::vector<double> f_history(1, f);
 
     int iter = 1;
     for (; iter < max_iter; ++iter)
     {
-        // Compute gradient at x
-        Gradient rb_grad(rb, x);
-        rb_grad.Mult(x, grad);
-
-        // Setup CG and compute dogleg
-        Hessian rb_hess(rb, x);
-        cg.SetOperator(rb_hess);
-
+        // Compute dogleg
         DogLeg(grad, rb_hess, cg, delta, p);
 
         // Check if p is acceptable
@@ -160,7 +153,6 @@ int main(int argc, char ** argv)
         double rho = (f - f_propose) / (m_0 - m_p);
 
         double p_norm = p.L2Norm();
-        double g_norm = grad.L2Norm();
 
         // Adjust delta
         if (rho < 0.25)
@@ -177,25 +169,25 @@ int main(int argc, char ** argv)
         {
             std::swap(x, x_propose);
             std::swap(f, f_propose);
+
+            rb_grad.Mult(x, grad);
+            g_norm = grad.L2Norm();
+            e_norm = error.L2Norm();
+
+            linalgcpp::Sub(ones, x, error);
         }
-
-        // Compute error
-        linalgcpp::Sub(ones, x, error);
-
-        double e_norm = error.L2Norm();
 
         if (save_history)
         {
             x_history.push_back(x);
             g_history.push_back(g_norm);
-            p_history.push_back(p_norm);
             f_history.push_back(f);
         }
 
         if (verbose)
         {
-            printf("%d: f: %.2e g: %.8f e: %.2e grad*p: %.2e cg: %d delta: %.3f rho: %.3f\n",
-                    iter, f, g_norm, e_norm, grad * p, cg.GetNumIterations(), delta, rho);
+            printf("%d: f: %.2e g: %.8f p: %.8f e: %.2e grad*p: %.2e cg: %d delta: %.3f rho: %.3f\n",
+                    iter, f, g_norm, p_norm, e_norm, grad * p, cg.GetNumIterations(), delta, rho);
         }
 
         if (g_norm < tol)
@@ -204,13 +196,15 @@ int main(int argc, char ** argv)
         }
     }
 
-    printf("f(x): %.2e Iter: %d\tTotal Function Evals: %d\n", f, iter, rb.num_evals);
+    printf("\nFinal Stats:\n------------------------\n");
+    printf("f(x):\t%.2e\nIter:\t%d\n", f, iter);
+    printf("Function Evals:\t%d\nGrad Evals:\t%d\nHessian Apply:\t%d\n",
+            rb.num_evals, rb_grad.num_evals, rb_hess.num_evals);
 
     if (save_history)
     {
         write_history(x_history, "x", rb_A);
         write_history(g_history, "g", rb_A);
-        write_history(p_history, "p", rb_A);
         write_history(f_history, "f", rb_A);
     }
 
