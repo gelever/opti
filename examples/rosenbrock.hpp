@@ -61,8 +61,8 @@ class Hessian : public Operator
 class Gradient : public Operator
 {
     public:
-        Gradient(const Rosenbrock& rb_in, const VectorView& x_in)
-            : Operator(rb_in.num_dim), rb(rb_in), x(x_in), num_evals(0)
+        Gradient(const Rosenbrock& rb_in)
+            : Operator(rb_in.num_dim), rb(rb_in), num_evals(0)
         {}
 
         using Operator::Mult;
@@ -89,7 +89,6 @@ class Gradient : public Operator
         }
 
         const Rosenbrock& rb;
-        const VectorView& x;
 
         mutable int num_evals;
 };

@@ -10,67 +10,69 @@
 
 using namespace rosenbrock;
 
-void CauchyPoint(const VectorView& grad, const Operator& B, double delta, VectorView p)
+bool CauchyPoint(const VectorView& grad, const Operator& B, double delta, VectorView p)
 {
     double gBg = B.InnerProduct(grad, grad);
     double g_norm = grad.L2Norm();
     double tau = delta / g_norm;
 
-    if (gBg <= 0.0)
-    {
-        p.Set(-tau, grad);
-    }
-    else
-    {
-        p.Set(-1.0 * std::min(tau, (g_norm * g_norm) / gBg), grad);
-    }
+    bool negative_gBg = (gBg <= 0.0);
+
+    p.Set(negative_gBg ? -tau : -std::min(tau, (g_norm * g_norm) / gBg), grad);
+
+    return negative_gBg;
 }
 
 
-void DogLeg(const VectorView& grad, const Operator& B, const Operator& B_inv, double delta, VectorView p)
+void DogLeg(const VectorView& grad, const Operator& B, const Operator& B_inv,
+            double delta, VectorView p, bool verbose = false)
 {
-    CauchyPoint(grad, B, delta, p);
+    bool negative_gBg = CauchyPoint(grad, B, delta, p);
 
-    // Close enough to trust region boundary
-    if (std::fabs(p.L2Norm() - delta) < 2.2204e-15)
+    // Try Dogleg only if gBg is positive or P_c is far enough inside trust region 
+    if (!negative_gBg && std::fabs(p.L2Norm() - delta) > 2.2204e-15)
     {
-        return;
-    }
-
-    // Try inverting B
-    try
-    {
-        Vector p_b = B_inv.Mult(grad);
-        p_b *= -1.0;
-
-        // P_b is in the interior
-        if (p_b.L2Norm() <= delta)
+        // Try inverting B
+        try
         {
-            p.Set(p_b);
-            return;
+            Vector p_b = B_inv.Mult(grad);
+            p_b *= -1.0;
+
+            // P_b is in the interior
+            if (p_b.L2Norm() <= delta)
+            {
+                p.Set(p_b);
+            }
+            // Otherwise use dogleg
+            else
+            {
+                p_b -= p;
+
+                double b = p.Mult(p_b);
+                double a = p_b.Mult(p_b);
+                double c = p.Mult(p) - (delta * delta);
+
+                double tau_dog = (-b + std::sqrt((b*b) - (a*c))) / a;
+
+                p.Add(tau_dog, p_b);
+            }
+
+            if (verbose) std::cout << "Using DogLeg\n";
         }
-
-        // Otherwise use dogleg
-        p_b -= p;
-
-        double b = p.Mult(p_b);
-        double a = p_b.Mult(p_b);
-        double c = p.Mult(p) - (delta * delta);
-
-        double tau_dog = (-b + std::sqrt((b*b) - (a*c))) / a;
-
-        p.Add(tau_dog, p_b);
+        catch(const std::runtime_error& e)
+        {
+            if (verbose) std::cout << "B not SPD, keeping Cauchy Point\n";
+        }
     }
-    // Otherwise use Cauchy point
-    catch(const std::runtime_error& e)
+    else
     {
-        //std::cout << "B not SPD, using Cauchy Point\n";
+        if (verbose) std::cout << "Using Cauchy Point\n";
     }
 }
 
 
 void ComputeP(const std::string& method, const VectorView& grad, const Operator& B,
-              const Operator& B_inv, double delta, VectorView p)
+              const Operator& B_inv, double delta, VectorView p, bool verbose = false)
 {
     if (method == "CauchyPoint")
     {
@@ -78,7 +80,7 @@ void ComputeP(const std::string& method, const VectorView& grad, const Operator&
     }
     else if (method == "Dogleg")
     {
-        DogLeg(grad, B, B_inv, delta, p);
+        DogLeg(grad, B, B_inv, delta, p, verbose);
     }
     else
     {
@@ -104,7 +106,7 @@ int main(int argc, char ** argv)
     double rb_A = 100.0;
     int dim = 2;
     double variance = 0.05;
-    std::string method = "Cauchy";
+    std::string method = "CauchyPoint";
     std::string initial_x = "Standard";
 
     linalgcpp::ArgParser arg_parser(argc, argv);
@@ -147,7 +149,7 @@ int main(int argc, char ** argv)
 
     // Problem initialize
     Rosenbrock rb(rb_A, dim);
-    Gradient rb_grad(rb, x);
+    Gradient rb_grad(rb);
     Hessian rb_hess(rb, x);
     linalgcpp::PCGSolver cg(rb_hess);
 
@@ -166,7 +168,7 @@ int main(int argc, char ** argv)
     for (; iter < max_iter; ++iter)
     {
         // Compute P and check if acceptable
-        ComputeP(method, grad, rb_hess, cg, delta, p);
+        ComputeP(method, grad, rb_hess, cg, delta, p, verbose);
         linalgcpp::Add(1.0, x, 1.0, p, 0.0, x_propose);
 
         double f_propose = rb.Eval(x_propose);
@@ -218,7 +220,7 @@ int main(int argc, char ** argv)
         }
     }
 
-    printf("\nFinal Stats:\n------------------------\n");
+    printf("\n%s Stats:\n------------------------\n", method.c_str());
     printf("f(x):\t%.2e\nIter:\t%d\n", f, iter);
     printf("Function Evals:\t%d\nGrad Evals:\t%d\nHessian Apply:\t%d\n",
             rb.num_evals, rb_grad.num_evals, rb_hess.num_evals);

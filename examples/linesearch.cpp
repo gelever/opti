@@ -139,19 +139,17 @@ int main(int argc, char ** argv)
 
     // Problem initialize
     Rosenbrock rb(rb_A, dim);
-    Gradient rb_grad(rb, x);
+    Gradient rb_grad(rb);
     Hessian rb_hess(rb, x);
     linalgcpp::PCGSolver cg(rb_hess);
+
+    double f = rb.Eval(x);
 
     // Workspace
     Vector grad(dim);
     Vector p(dim);
     Vector ones(dim, 1.0);
     Vector error(dim);
-
-    double f = rb.Eval(x);
-    double g_norm = grad.L2Norm();
-    double e_norm = error.L2Norm();
 
     // History
     std::vector<Vector> x_history;
@@ -193,7 +191,7 @@ int main(int argc, char ** argv)
         }
     }
 
-    printf("\nFinal Stats:\n------------------------\n");
+    printf("\n%s Stats:\n------------------------\n", method.c_str());
     printf("f(x):\t%.2e\nIter:\t%d\n", f, iter);
     printf("Function Evals:\t%d\nGrad Evals:\t%d\nHessian Apply:\t%d\n",
             rb.num_evals, rb_grad.num_evals, rb_hess.num_evals);
