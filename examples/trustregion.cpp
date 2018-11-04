@@ -66,7 +66,12 @@ void DogLeg(const VectorView& grad, const Operator& B, const Operator& B_inv,
     }
     else
     {
-        if (verbose) std::cout << "Using Cauchy Point\n";
+        if (verbose)
+        {
+            std::cout << "Using Cauchy Point:\t";
+            if (negative_gBg) std::cout << "Negative gBg\n";
+            else std::cout << "Close Cauchy\n";
+        }
     }
 }
 
