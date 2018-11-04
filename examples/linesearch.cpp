@@ -22,9 +22,11 @@ void LineBackTrack(const Rosenbrock& rb, VectorView x,
         double& f, const VectorView& grad, const VectorView& p,
         const LineSearchParams& ls_params)
 {
+    MPI_Comm comm = rb.comm;
+
     double alpha = ls_params.alpha_0;
     double f_0 = f;
-    double c_grad_p = ls_params.c * (grad * p);
+    double c_grad_p = ls_params.c * (ParMult(comm,grad, p));
 
     Vector x_0(x);
     linalgcpp::Add(1.0, x_0, alpha, p, 0.0, x);
@@ -86,6 +88,12 @@ void update_p(const std::string& method, const Rosenbrock& rb,
 
 int main(int argc, char ** argv)
 {
+    // Initialize MPI
+    MpiSession mpi_info(argc, argv);
+    MPI_Comm comm = mpi_info.comm;
+    int myid = mpi_info.myid;
+    int num_procs = mpi_info.num_procs;
+
     // Iteration Params
     double tol = 1e-3;
     int max_iter = 20000;
@@ -126,30 +134,35 @@ int main(int argc, char ** argv)
 
     if (!arg_parser.IsGood())
     {
-        arg_parser.ShowHelp();
-        arg_parser.ShowErrors();
+        ParPrint(myid, arg_parser.ShowHelp());
+        ParPrint(myid, arg_parser.ShowErrors());
 
         return EXIT_FAILURE;
     }
 
-    arg_parser.ShowOptions();
-
-    // Initial point
-    Vector x = set_x(dim, initial_x, variance);
+    ParPrint(myid, arg_parser.ShowOptions());
 
     // Problem initialize
-    Rosenbrock rb(rb_A, dim);
+    Rosenbrock rb(comm, rb_A, dim);
+    Vector x = set_x(rb, initial_x, variance);
     Gradient rb_grad(rb);
     Hessian rb_hess(rb, x);
-    linalgcpp::PCGSolver cg(rb_hess);
+
+    // Hessian Solver initialize
+    int cg_max_iter = 1000;
+    double cg_rel_tol = 1e-6;
+    double cg_abs_tol = 1e-8;
+    int cg_verbose = false;
+    linalgcpp::PCGSolver cg(rb_hess, cg_max_iter, cg_rel_tol, cg_abs_tol, cg_verbose,
+                            linalgcpp::ParMult);
 
     double f = rb.Eval(x);
 
     // Workspace
-    Vector grad(dim);
-    Vector p(dim);
-    Vector ones(dim, 1.0);
-    Vector error(dim);
+    Vector grad(rb.local_dim);
+    Vector p(rb.local_dim);
+    Vector ones(rb.local_dim, 1.0);
+    Vector error(rb.local_dim);
 
     // History
     std::vector<Vector> x_history;
@@ -169,8 +182,8 @@ int main(int argc, char ** argv)
         // Compute error
         linalgcpp::Sub(ones, x, error);
 
-        double e_norm = error.L2Norm();
-        double p_norm = p.L2Norm();
+        double e_norm = ParL2Norm(comm, error);
+        double p_norm = ParL2Norm(comm, p);
 
         if (save_history)
         {
@@ -181,8 +194,8 @@ int main(int argc, char ** argv)
 
         if (verbose)
         {
-            printf("%d: f: %.2e p: %.2e e: %.2e grad*p: %.2e cg: %d\n",
-                    iter, f, p_norm, e_norm, grad * p, cg.GetNumIterations());
+            ParPrint(myid, printf("%d: f: %.2e p: %.2e e: %.2e grad*p: %.2e cg: %d\n",
+                    iter, f, p_norm, e_norm, grad * p, cg.GetNumIterations()));
         }
 
         if (p_norm < tol)
@@ -191,16 +204,17 @@ int main(int argc, char ** argv)
         }
     }
 
-    printf("\n%s Stats:\n------------------------\n", method.c_str());
-    printf("f(x):\t%.2e\nIter:\t%d\n", f, iter);
-    printf("Function Evals:\t%d\nGrad Evals:\t%d\nHessian Apply:\t%d\n",
-            rb.num_evals, rb_grad.num_evals, rb_hess.num_evals);
+    ParPrint(myid, printf("\n%s Stats:\n------------------------\n", method.c_str()));
+    ParPrint(myid, printf("f(x):\t%.2e\nIter:\t%d\n", f, iter));
+    ParPrint(myid, printf("Function Evals:\t%d\nGrad Evals:\t%d\nHessian Apply:\t%d\n",
+             rb.num_evals, rb_grad.num_evals, rb_hess.num_evals));
 
     if (save_history)
     {
-        write_history(x_history, "x", rb_A);
-        write_history(p_history, "p", rb_A);
-        write_history(f_history, "f", rb_A);
+        //Dont work in parallel yet
+        //write_history(x_history, "x", rb_A);
+        //write_history(p_history, "p", rb_A);
+        //write_history(f_history, "f", rb_A);
     }
 
     return 0;

@@ -19,6 +19,7 @@ target_compile_options(opti PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wp
 target_link_libraries(opti
     PUBLIC
         linalgcpp::linalgcpp
+        linalgcpp::parlinalgcpp
 )
 
 target_include_directories(opti
