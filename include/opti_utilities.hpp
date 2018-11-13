@@ -15,6 +15,7 @@ using MpiSession = linalgcpp::MpiSession;
 using linalgcpp::Timer;
 using linalgcpp::ParL2Norm;
 using linalgcpp::linalgcpp_verify;
+using linalgcpp::Timer;
 
 void write_history(const std::vector<Vector>& x, const std::string& prefix, double A);
 
