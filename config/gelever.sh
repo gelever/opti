@@ -17,6 +17,7 @@ SUITESPARSE_DIR=~/SuiteSparse
 BUILD_TYPE=Debug
 
 FC=/usr/bin/x86_64-linux-gnu-gfortran-7 CC=mpicc CXX=mpic++ cmake \
+    -DMETIS_DIR=${METIS_DIR} \
     -DHypre_INC_DIR=${HYPRE_DIR}/include \
     -DHypre_LIB_DIR=${HYPRE_DIR}/lib \
     -DSUITESPARSE_INCLUDE_DIR_HINTS=${SUITESPARSE_DIR}/include \

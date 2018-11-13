@@ -6,7 +6,7 @@
  * Copyright (c) 2018, Stephan Gelever
  */
 
-#include "utilities.hpp"
+#include "opti_utilities.hpp"
 
 using namespace opti;
 

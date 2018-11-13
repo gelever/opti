@@ -165,6 +165,8 @@ int main(int argc, char ** argv)
 
     ParPrint(myid, arg_parser.ShowOptions());
 
+    ParPrint(myid, std::cout << "Processors: " << num_procs << "\n");
+
     // Problem initialize
     Rosenbrock rb(comm, rb_A, dim);
     Vector x = set_x(rb, initial_x, variance);
@@ -197,6 +199,8 @@ int main(int argc, char ** argv)
     std::vector<Vector> x_history(1, x);
     std::vector<double> g_history(1, g_norm);
     std::vector<double> f_history(1, f);
+
+    Timer timer(Timer::Start::True);
 
     int iter = 1;
     for (; iter < max_iter; ++iter)
@@ -256,7 +260,10 @@ int main(int argc, char ** argv)
         }
     }
 
+    timer.Click();
+
     ParPrint(myid, printf("\n%s Stats:\n------------------------\n", method.c_str()));
+    ParPrint(myid, printf("Total Time:\t%.5f\n", timer.TotalTime()));
     ParPrint(myid, printf("f(x):\t%.2e\nIter:\t%d\n", f, iter));
     ParPrint(myid, printf("Function Evals:\t%d\nGrad Evals:\t%d\nHessian Apply:\t%d\n",
             rb.num_evals, rb_grad.num_evals, rb_hess.num_evals));
