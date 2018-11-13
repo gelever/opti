@@ -17,14 +17,26 @@ def plot_figs(x_hist, p_hist, f_hist, A, method):
     if (len(x_hist) > 0):
         ax = fig.add_subplot(121)
 
+        maxs = np.amax(x_hist, axis=0)
+        mins = np.amin(x_hist, axis=0)
+
         if A > 1.0:
-            x_space = np.linspace(-1.5, 1.5, 1000)
-            y_space = np.linspace(-0.1, 1.5, 1000)
-            levels = np.logspace(0, 8, num=10, base=2.0)
-        else:   
-            x_space = np.linspace(-2.0, 2.0, 1000)
-            y_space = np.linspace(-2.0, 2.0, 1000)
+            levels = np.logspace(0, 8, num=20, base=2.0)
+            maxs += 0.5
+            mins -= 0.5
+        else:
             levels = np.linspace(0, 8, num=10)
+            maxs.fill(2.0)
+            mins.fill(-2.0)
+
+        x_space = np.linspace(mins[0], maxs[0], 1000)
+        y_space = np.linspace(mins[1], maxs[1], 1000)
+
+        #if A > 1.0:
+        #else:   
+        #    x_space = np.linspace(-2.0, 2.0, 1000)
+        #    y_space = np.linspace(-2.0, 2.0, 1000)
+        #    levels = np.linspace(0, 8, num=10)
 
         x, y = np.meshgrid(x_space, y_space)
         z = (A * (y - (x*x))**2 + (1 - x)**2)
@@ -80,17 +92,16 @@ if __name__ == "__main__":
 
     for A in As:
         x_hist = np.loadtxt("x." + str(A) + "00000.history.txt")
-        p_hist = np.loadtxt("p." + str(A) + "00000.history.txt")
-        #g_hist = np.loadtxt("g." + str(A) + "000000.history.txt")
+        g_hist = np.loadtxt("g." + str(A) + "00000.history.txt")
         f_hist = np.loadtxt("f." + str(A) + "00000.history.txt")
 
-        print(A, method, len(p_hist))
+        print(A, method, len(g_hist))
 
         #fvals(x_hist)
         #grads(x_hist)
         #hess(x_hist)
         #hess_grad(x_hist)
         #plot_figs(x_hist, p_hist, f_hist, A, m)
-        plot_figs(x_hist, p_hist, f_hist, A, method)
+        plot_figs(x_hist, g_hist, f_hist, A, method)
         #plot_figs(x_hist, g_hist, f_hist, A, m)
         #plot_figs([], p_hist, f_hist, A, m)
