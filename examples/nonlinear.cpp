@@ -255,6 +255,7 @@ int main(int argc, char ** argv)
     ParPrint(myid, printf("Function Evals:\t%d\nGrad Evals:\t%d\nRestarts:\t%d\n",
              rb.num_evals, rb_grad.num_evals, num_restarts));
     ParPrint(myid, printf("Time (s):\t%.8f\n", timer.TotalTime()));
+    ParPrint(myid, printf("Processors:\t%d\n", num_procs));
 
     if (save_history)
     {
