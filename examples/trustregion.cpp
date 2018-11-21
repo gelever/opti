@@ -10,10 +10,11 @@
 
 using namespace rosenbrock;
 
-bool CauchyPoint(const VectorView& grad, const Operator& B, double delta, VectorView p)
+bool CauchyPoint(MPI_Comm comm, const VectorView& grad, const Operator& B, double delta, VectorView p)
 {
-    double gBg = B.InnerProduct(grad, grad);
-    double g_norm = grad.L2Norm();
+    B.Mult(grad, p);
+    double gBg = ParMult(comm, grad, p);
+    double g_norm = ParL2Norm(comm, grad);
     double tau = delta / g_norm;
 
     bool negative_gBg = (gBg <= 0.0);
@@ -24,68 +25,84 @@ bool CauchyPoint(const VectorView& grad, const Operator& B, double delta, Vector
 }
 
 
-void DogLeg(const VectorView& grad, const Operator& B, const Operator& B_inv,
+void DogLeg(MPI_Comm comm, const VectorView& grad, const Operator& B, const Operator& B_inv,
             double delta, VectorView p, bool verbose = false)
 {
-    bool negative_gBg = CauchyPoint(grad, B, delta, p);
+    bool negative_gBg = CauchyPoint(comm, grad, B, delta, p);
+
+    int myid;
+    MPI_Comm_rank(comm, &myid);
 
     // Try Dogleg only if gBg is positive or P_c is far enough inside trust region 
-    if (!negative_gBg && std::fabs(p.L2Norm() - delta) > 2.2204e-15)
+    if (!negative_gBg && std::fabs(ParL2Norm(comm, p) - delta) > 2.2204e-15)
     {
         // Try inverting B
         try
         {
-            Vector p_b = B_inv.Mult(grad);
+            Vector p_b(grad.size(), 0.0);
+            B_inv.Mult(grad, p_b);
             p_b *= -1.0;
 
             // P_b is in the interior
-            if (p_b.L2Norm() <= delta)
+            double p_b_norm = ParL2Norm(comm, p_b);
+
+            if (p_b_norm <= delta)
             {
                 p.Set(p_b);
+
+                ParPrint(myid, if (verbose) std::cout << "Using interior Newton point\n");
             }
             // Otherwise use dogleg
             else
             {
                 p_b -= p;
 
-                double b = p.Mult(p_b);
-                double a = p_b.Mult(p_b);
-                double c = p.Mult(p) - (delta * delta);
+                double b = ParMult(comm, p, p_b);
+                double a = ParMult(comm, p_b, p_b);
+                double c = ParMult(comm, p, p) - (delta * delta);
 
                 double tau_dog = (-b + std::sqrt((b*b) - (a*c))) / a;
 
                 p.Add(tau_dog, p_b);
+
+                if (verbose) ParPrint(myid, std::cout << "Using DogLeg\n");
             }
 
-            if (verbose) std::cout << "Using DogLeg\n";
         }
         catch(const std::runtime_error& e)
         {
-            if (verbose) std::cout << "B not SPD, keeping Cauchy Point\n";
+            if (verbose) ParPrint(myid, std::cout << "B not SPD, keeping Cauchy Point\n");
         }
     }
     else
     {
         if (verbose)
         {
-            std::cout << "Using Cauchy Point:\t";
-            if (negative_gBg) std::cout << "Negative gBg\n";
-            else std::cout << "Close Cauchy\n";
+            ParPrint(myid, std::cout << "Using Cauchy Point:\t");
+
+            if (negative_gBg)
+            {
+                ParPrint(myid, std::cout << "Negative gBg\n");
+            }
+            else
+            {
+                ParPrint(myid, std::cout << "Close Cauchy\n");
+            }
         }
     }
 }
 
 
-void ComputeP(const std::string& method, const VectorView& grad, const Operator& B,
+void ComputeP(MPI_Comm comm, const std::string& method, const VectorView& grad, const Operator& B,
               const Operator& B_inv, double delta, VectorView p, bool verbose = false)
 {
     if (method == "CauchyPoint")
     {
-        CauchyPoint(grad, B, delta, p);
+        CauchyPoint(comm, grad, B, delta, p);
     }
     else if (method == "Dogleg")
     {
-        DogLeg(grad, B, B_inv, delta, p, verbose);
+        DogLeg(comm, grad, B, B_inv, delta, p, verbose);
     }
     else
     {
@@ -95,6 +112,12 @@ void ComputeP(const std::string& method, const VectorView& grad, const Operator&
 
 int main(int argc, char ** argv)
 {
+    // Initialize MPI
+    MpiSession mpi_info(argc, argv);
+    MPI_Comm comm = mpi_info.comm;
+    int myid = mpi_info.myid;
+    int num_procs = mpi_info.num_procs;
+
     // Trust Region Params
     double delta = 0.5;
     double delta_max = 1.0;
@@ -134,54 +157,66 @@ int main(int argc, char ** argv)
 
     if (!arg_parser.IsGood())
     {
-        arg_parser.ShowHelp();
-        arg_parser.ShowErrors();
+        ParPrint(myid, arg_parser.ShowHelp());
+        ParPrint(myid, arg_parser.ShowErrors());
 
         return EXIT_FAILURE;
     }
 
-    arg_parser.ShowOptions();
+    ParPrint(myid, arg_parser.ShowOptions());
 
-    // Initial point
-    Vector x = set_x(dim, initial_x, variance);
-    Vector x_propose(dim);
-
-    // Workspace
-    Vector grad(dim);
-    Vector p(dim);
-    Vector ones(dim, 1.0);
-    Vector error = ones - x;
+    ParPrint(myid, std::cout << "Processors: " << num_procs << "\n");
 
     // Problem initialize
-    Rosenbrock rb(rb_A, dim);
+    Rosenbrock rb(comm, rb_A, dim);
+    Vector x = set_x(rb, initial_x, variance);
+    Vector x_propose(rb.local_dim);
     Gradient rb_grad(rb);
     Hessian rb_hess(rb, x);
-    linalgcpp::PCGSolver cg(rb_hess);
+
+    // Hessian Solver initialize
+    int cg_max_iter = 10000;
+    double cg_rel_tol = 1e-6;
+    double cg_abs_tol = 1e-8;
+    int cg_verbose = false;
+    linalgcpp::PCGSolver cg(rb_hess, cg_max_iter, cg_rel_tol, cg_abs_tol, cg_verbose,
+                            linalgcpp::ParMult);
+
+    // Workspace
+    Vector grad(rb.local_dim);
+    Vector p(rb.local_dim);
+    Vector Bp(rb.local_dim);
+    Vector ones(rb.local_dim, 1.0);
+    Vector error = ones - x;
 
     rb_grad.Mult(x, grad);
 
     double f = rb.Eval(x);
-    double g_norm = grad.L2Norm();
-    double e_norm = error.L2Norm();
+    double g_norm = ParL2Norm(comm, grad);
+    double e_norm = ParL2Norm(comm, error);
 
     // History
     std::vector<Vector> x_history(1, x);
     std::vector<double> g_history(1, g_norm);
     std::vector<double> f_history(1, f);
 
+    Timer timer(Timer::Start::True);
+
     int iter = 1;
     for (; iter < max_iter; ++iter)
     {
         // Compute P and check if acceptable
-        ComputeP(method, grad, rb_hess, cg, delta, p, verbose);
+        ComputeP(comm, method, grad, rb_hess, cg, delta, p, verbose);
         linalgcpp::Add(1.0, x, 1.0, p, 0.0, x_propose);
 
+        rb_hess.Mult(p, Bp);
         double f_propose = rb.Eval(x_propose);
-        double m_0 = -1.0 * grad.Mult(p);
-        double m_p = -0.5 * rb_hess.InnerProduct(p, p);
+        double m_0 = -1.0 * ParMult(comm, grad, p);
+        double pBp = ParMult(comm, p, Bp);
+        double m_p = -0.5 * pBp;
         double rho = (f - f_propose) / (m_0 - m_p);
 
-        double p_norm = p.L2Norm();
+        double p_norm = ParL2Norm(comm, p);
 
         // Adjust delta
         if (rho < 0.25)
@@ -200,8 +235,8 @@ int main(int argc, char ** argv)
             std::swap(f, f_propose);
 
             rb_grad.Mult(x, grad);
-            g_norm = grad.L2Norm();
-            e_norm = error.L2Norm();
+            g_norm = ParL2Norm(comm, grad);
+            e_norm = ParL2Norm(comm, error);
 
             linalgcpp::Sub(ones, x, error);
         }
@@ -215,8 +250,8 @@ int main(int argc, char ** argv)
 
         if (verbose)
         {
-            printf("%d: f: %.2e g: %.8f p: %.8f e: %.2e grad*p: %.2e cg: %d delta: %.3f rho: %.3f\n",
-                    iter, f, g_norm, p_norm, e_norm, grad * p, cg.GetNumIterations(), delta, rho);
+            ParPrint(myid, printf("%d: f: %.2e g: %.2e p: %.2e e: %.2e grad*p: %.2e cg: %d delta: %.3f rho: %.3f\n",
+                    iter, f, g_norm, p_norm, e_norm, /*notright*/grad * p, cg.GetNumIterations(), delta, rho));
         }
 
         if (g_norm < tol)
@@ -225,10 +260,13 @@ int main(int argc, char ** argv)
         }
     }
 
-    printf("\n%s Stats:\n------------------------\n", method.c_str());
-    printf("f(x):\t%.2e\nIter:\t%d\n", f, iter);
-    printf("Function Evals:\t%d\nGrad Evals:\t%d\nHessian Apply:\t%d\n",
-            rb.num_evals, rb_grad.num_evals, rb_hess.num_evals);
+    timer.Click();
+
+    ParPrint(myid, printf("\n%s Stats:\n------------------------\n", method.c_str()));
+    ParPrint(myid, printf("Total Time:\t%.5f\n", timer.TotalTime()));
+    ParPrint(myid, printf("f(x):\t%.2e\nIter:\t%d\n", f, iter));
+    ParPrint(myid, printf("Function Evals:\t%d\nGrad Evals:\t%d\nHessian Apply:\t%d\n",
+            rb.num_evals, rb_grad.num_evals, rb_hess.num_evals));
 
     if (save_history)
     {

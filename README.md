@@ -15,6 +15,12 @@ Currently implemented:
 * [Trust Region](examples/trustregion.cpp):
   * Cauchy Point
   * Dogleg 
+* [Nonlinear CG](examples/nonlinear.cpp):
+  * Beta Options:
+    * Fletcher–Reeves
+    * Polak–Ribière
+    * Hestenes-Stiefel
+    * Dai–Yuan
 
 # Sample Output
 From the [results](results) directory:
