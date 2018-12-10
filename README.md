@@ -21,6 +21,7 @@ Currently implemented:
     * Polak–Ribière
     * Hestenes-Stiefel
     * Dai–Yuan
+* [Tikhonov Regularization](examples/tikhonov.py)
 
 # Sample Output
 From the [results](results) directory:
