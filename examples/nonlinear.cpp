@@ -37,8 +37,7 @@ void LineBackTrack(const Rosenbrock& rb, VectorView x,
         // Check Alpha
         f = rb.Eval(x);
 
-        //if (f < f_0 + (alpha * c_grad_p))
-        if (f / c_grad_p > f_0 / c_grad_p + (alpha))
+        if (f < f_0 + (alpha * c_grad_p))
         {
             break;
         }
@@ -207,8 +206,8 @@ int main(int argc, char ** argv)
 
         linalgcpp::Add(-1.0, grad_next, beta, p, 0.0, p_next);
 
-        //if (beta == 0.0)
         double g_p_next = ParMult(comm, grad_next, p_next);
+
         if (g_p_next >= -1e-12 || (restart > 0 && (iter - last_restart > restart)))
         {
             num_restarts++;
@@ -250,7 +249,7 @@ int main(int argc, char ** argv)
 
     timer.Click();
 
-    ParPrint(myid, printf("\n%s Stats:\n------------------------\n", method.c_str()));
+    ParPrint(myid, printf("\nNonlinear - %s Method Stats:\n------------------------\n", method.c_str()));
     ParPrint(myid, printf("f(x):\t%.2e\nIter:\t%d\n", f, iter));
     ParPrint(myid, printf("Function Evals:\t%d\nGrad Evals:\t%d\nRestarts:\t%d\n",
              rb.num_evals, rb_grad.num_evals, num_restarts));
