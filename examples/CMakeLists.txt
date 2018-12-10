@@ -9,6 +9,12 @@ target_link_libraries(trustregion opti)
 add_executable(nonlinear nonlinear.cpp)
 target_link_libraries(nonlinear opti)
 
-configure_file(
-  "${PROJECT_SOURCE_DIR}/examples/plot_rosen.py"
-  "${PROJECT_BINARY_DIR}/examples/plot_rosen.py" @ONLY)
+function(copy_file filename)
+    configure_file(
+        "${PROJECT_SOURCE_DIR}/examples/${filename}"
+        "${PROJECT_BINARY_DIR}/examples/${filename}" @ONLY)
+endfunction(copy_file)
+
+copy_file(plot_rosen.py)
+copy_file(tikhonov.py)
+copy_file(dollarblur.m)
